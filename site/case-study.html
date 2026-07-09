@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Case Study — Automated Billing Reconciliation & Anomaly Detection</title>
+<style>
+  :root{
+    --bg:#f6f7f9; --surface:#ffffff; --surface-2:#f0f2f5; --text:#151a22;
+    --muted:#5b6672; --border:#e2e6eb; --accent:#2f5fe0; --accent-soft:#dbe4fb;
+    --ml:#0f9d8b; --ml-soft:#cdeee8; --alert:#d1435b; --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+    --radius:14px; --maxw:1080px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#0d1117; --surface:#161b22; --surface-2:#1c232d; --text:#e7edf3;
+      --muted:#93a1b0; --border:#2a323c; --accent:#6f97ff; --accent-soft:#1e2a4d;
+      --ml:#37c9b4; --ml-soft:#123630; --alert:#ff6b81; --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 22px}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  h1,h2,h3{line-height:1.2;letter-spacing:-.02em;margin:0}
+  section{padding:56px 0;border-top:1px solid var(--border)}
+  .eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+  .lead{color:var(--muted);font-size:1.12rem;max-width:64ch}
+  .tags{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+  .tag{font-size:.8rem;font-weight:600;padding:5px 11px;border-radius:999px;
+    background:var(--surface);border:1px solid var(--border);color:var(--muted)}
+  .note{display:inline-flex;align-items:center;gap:8px;margin-top:22px;font-size:.85rem;
+    color:var(--muted);background:var(--surface);border:1px solid var(--border);
+    padding:8px 13px;border-radius:10px}
+  .note b{color:var(--text)}
+
+  /* hero */
+  header.hero{padding:76px 0 8px}
+  header.hero h1{font-size:clamp(1.9rem,4.4vw,3rem);margin:14px 0 18px}
+
+  /* KPI cards */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:8px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:18px;box-shadow:var(--shadow)}
+  .kpi .v{font-size:1.7rem;font-weight:800;letter-spacing:-.02em}
+  .kpi .l{font-size:.82rem;color:var(--muted);margin-top:4px}
+  .kpi .v.alert{color:var(--alert)}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:26px;align-items:start}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:22px;box-shadow:var(--shadow)}
+  .card h3{font-size:1.05rem;margin-bottom:4px}
+  .card .sub{font-size:.85rem;color:var(--muted);margin-bottom:16px}
+
+  h2.title{font-size:clamp(1.4rem,3vw,2rem);margin:10px 0 10px}
+  .flow{display:flex;flex-wrap:wrap;gap:10px;margin-top:22px}
+  .step{flex:1;min-width:150px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:14px 16px}
+  .step .n{font-size:.72rem;font-weight:700;color:var(--accent);letter-spacing:.1em}
+  .step b{display:block;margin:2px 0 3px}
+  .step small{color:var(--muted)}
+
+  table{width:100%;border-collapse:collapse;font-size:.92rem}
+  th,td{padding:11px 12px;text-align:right;border-bottom:1px solid var(--border)}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-size:.76rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+  tr.hi td{background:var(--accent-soft);font-weight:700}
+  .win{color:var(--ml);font-weight:700}
+  .miss{color:var(--alert);font-weight:700}
+
+  .legend{display:flex;gap:18px;font-size:.82rem;color:var(--muted);margin:2px 0 14px}
+  .swatch{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:middle}
+
+  .callout{background:linear-gradient(180deg,var(--accent-soft),transparent);
+    border:1px solid var(--border);border-left:4px solid var(--accent);
+    border-radius:12px;padding:20px 22px;margin-top:22px}
+  .callout b{color:var(--text)}
+
+  .stack{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:8px}
+  .stack .t{font-weight:700;margin-bottom:2px}
+  .stack small{color:var(--muted)}
+
+  footer{padding:44px 0 70px;color:var(--muted);font-size:.9rem;border-top:1px solid var(--border)}
+  .btn{display:inline-block;background:var(--accent);color:#fff;font-weight:600;
+    padding:11px 18px;border-radius:10px;margin-top:6px}
+  .btn:hover{text-decoration:none;opacity:.92}
+
+  @media(max-width:820px){
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .grid2{grid-template-columns:1fr}
+    .stack{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="eyebrow">Case study · Data / Analytics Engineering</div>
+    <h1>Automated Billing Reconciliation &amp; Anomaly Detection</h1>
+    <p class="lead">A reconciliation engine for high-volume logistics billing: it matches
+      tens of thousands of invoices to payments, flags the billing anomalies that erode
+      margin, and ranks every exception by € at risk — combining deterministic SQL rules
+      with an unsupervised machine-learning layer.</p>
+    <div class="tags">
+      <span class="tag">SQL (window functions, CTEs)</span>
+      <span class="tag">Python · pandas</span>
+      <span class="tag">scikit-learn · Isolation Forest</span>
+      <span class="tag">Power BI</span>
+      <span class="tag">SQLite</span>
+    </div>
+    <div class="note">🔒 <span><b>Synthetic dataset</b> modelled on billing/logistics
+      operations — no proprietary information used. Fully reproducible from a fixed seed.</span></div>
+  </div>
+</header>
+
+<section style="border-top:none;padding-top:28px">
+  <div class="wrap">
+    <div class="kpis">
+      <div class="kpi"><div class="v">99K+</div><div class="l">transactions reconciled<br>(50,250 invoices · 48,779 payments)</div></div>
+      <div class="kpi"><div class="v">99.7%</div><div class="l">payment match rate</div></div>
+      <div class="kpi"><div class="v alert">€214k</div><div class="l">revenue at risk surfaced</div></div>
+      <div class="kpi"><div class="v">2,767</div><div class="l">exceptions ranked by impact</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">The problem</div>
+    <h2 class="title">Reconciliation is manual, slow, and leaks margin</h2>
+    <p class="lead">A logistics operation issues tens of thousands of invoices a month.
+      Matching them to incoming payments is a spreadsheet-driven process, so billing errors
+      slip through: duplicate invoices, wrong rates, misapplied fuel surcharges, short
+      payments, unapplied cash. Each one erodes margin or inflates days-sales-outstanding —
+      and at volume, nobody can review them all by hand.</p>
+    <div class="grid2" style="margin-top:26px">
+      <div class="card">
+        <h3>What I built</h3>
+        <p class="sub">An end-to-end, one-command pipeline</p>
+        <p style="margin:0;color:var(--muted)">A synthetic-but-realistic dataset (500 customers,
+        12 months, ~3% of transactions seeded with six real-world error types as hidden ground
+        truth), a SQL reconciliation core, an Isolation Forest anomaly layer, and a rigorous
+        evaluation of both against that ground truth.</p>
+      </div>
+      <div class="card">
+        <h3>The six anomaly types</h3>
+        <p class="sub">Injected at ~3%, held out as ground truth</p>
+        <p style="margin:0;color:var(--muted)">Rate discrepancy · duplicate invoice ·
+        fuel-surcharge error · short/over payment · unapplied cash · overdue.
+        Plus deliberately dirty data — mixed date formats, noisy customer keys, swapped
+        currency labels — so the cleaning stage is genuine.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- APPROACH -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Approach</div>
+    <h2 class="title">Most of the logic lives in SQL; ML closes the gap</h2>
+    <p class="lead">Cleaning, exact and fuzzy invoice-to-payment matching, duplicate
+      detection via window functions, and rate-card revalidation are all expressed in SQL.
+      Python handles data generation, the anomaly model, and evaluation.</p>
+    <div class="flow">
+      <div class="step"><div class="n">01</div><b>Generate</b><small>Python + Faker, seeded. Rate cards, terms, dirty data, hidden labels.</small></div>
+      <div class="step"><div class="n">02</div><b>Clean</b><small>Normalise keys, fix currency labels, parse mixed date formats.</small></div>
+      <div class="step"><div class="n">03</div><b>Match</b><small>Exact on reference, then fuzzy by customer + amount (window rank).</small></div>
+      <div class="step"><div class="n">04</div><b>Rules</b><small>Duplicates, rate revalidation, short/over pay, unapplied cash.</small></div>
+      <div class="step"><div class="n">05</div><b>ML</b><small>Isolation Forest scores each invoice for subtle anomalies.</small></div>
+      <div class="step"><div class="n">06</div><b>Rank</b><small>Exceptions register: aging, severity, € at risk → Power BI.</small></div>
+    </div>
+
+    <div class="card" style="margin-top:26px">
+      <h3>Data model</h3>
+      <p class="sub">Four reference/transaction tables + a hidden ground-truth table</p>
+      <svg viewBox="0 0 760 220" width="100%" role="img" aria-label="Entity relationship diagram" style="max-width:760px">
+        <style>
+          .ent{fill:var(--surface-2);stroke:var(--border)}
+          .eh{fill:var(--accent-soft)}
+          .et{fill:var(--text);font:600 13px sans-serif}
+          .ef{fill:var(--muted);font:11px sans-serif}
+          .rel{stroke:var(--muted);stroke-width:1.5;fill:none}
+        </style>
+        <!-- customers -->
+        <g><rect class="ent" x="20" y="70" width="150" height="80" rx="8"/>
+          <rect class="eh" x="20" y="70" width="150" height="24" rx="8"/><rect class="eh" x="20" y="84" width="150" height="10"/>
+          <text class="et" x="32" y="87">customers</text>
+          <text class="ef" x="32" y="112">customer_id · segment</text>
+          <text class="ef" x="32" y="130">terms · rate_card_id</text></g>
+        <!-- rate_card -->
+        <g><rect class="ent" x="20" y="10" width="150" height="42" rx="8"/>
+          <rect class="eh" x="20" y="10" width="150" height="22" rx="8"/><rect class="eh" x="20" y="24" width="150" height="8"/>
+          <text class="et" x="32" y="26">rate_card</text>
+          <text class="ef" x="32" y="46">service · zone · rate/kg</text></g>
+        <!-- invoices -->
+        <g><rect class="ent" x="300" y="60" width="170" height="80" rx="8"/>
+          <rect class="eh" x="300" y="60" width="170" height="24" rx="8"/><rect class="eh" x="300" y="74" width="170" height="10"/>
+          <text class="et" x="312" y="77">invoices</text>
+          <text class="ef" x="312" y="102">invoice_id · customer_id</text>
+          <text class="ef" x="312" y="120">total_amount · date</text></g>
+        <!-- fuel_index -->
+        <g><rect class="ent" x="300" y="0" width="170" height="42" rx="8"/>
+          <rect class="eh" x="300" y="0" width="170" height="22" rx="8"/><rect class="eh" x="300" y="14" width="170" height="8"/>
+          <text class="et" x="312" y="16">fuel_index</text>
+          <text class="ef" x="312" y="36">month · surcharge_pct</text></g>
+        <!-- payments -->
+        <g><rect class="ent" x="600" y="60" width="150" height="80" rx="8"/>
+          <rect class="eh" x="600" y="60" width="150" height="24" rx="8"/><rect class="eh" x="600" y="74" width="150" height="10"/>
+          <text class="et" x="612" y="77">payments</text>
+          <text class="ef" x="612" y="102">payment_id</text>
+          <text class="ef" x="612" y="120">invoice_id · amount</text></g>
+        <path class="rel" d="M170 110 H300"/>
+        <path class="rel" d="M470 100 H600"/>
+        <path class="rel" d="M95 52 V70"/>
+        <path class="rel" d="M385 42 V60"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<!-- RESULTS -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">The result</div>
+    <h2 class="title">Rules are precise; ML recovers what rules can't see</h2>
+    <p class="lead">Because every anomaly was seeded, detection could be measured exactly.
+      Three systems compared against the same ground truth:</p>
+
+    <div class="grid2" style="margin-top:24px">
+      <div class="card">
+        <h3>Detection performance</h3>
+        <p class="sub">Precision / recall / F1 vs. seeded ground truth</p>
+        <table>
+          <thead><tr><th>System</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead>
+          <tbody>
+            <tr><td>Rules only</td><td>99.4%</td><td>83.3%</td><td>0.91</td></tr>
+            <tr><td>ML only</td><td>18.8%</td><td>19.0%</td><td>0.19</td></tr>
+            <tr class="hi"><td>Rules + ML</td><td>53.2%</td><td>93.8%</td><td>0.68</td></tr>
+          </tbody>
+        </table>
+        <p class="sub" style="margin-top:14px">Combined lifts recall <b>83% → 94%</b>. Precision
+          falls because ML adds candidates a reviewer triages in € order — the trade-off is a
+          fuller net, not a cleaner one.</p>
+      </div>
+
+      <div class="card">
+        <h3>Recall by anomaly type</h3>
+        <p class="sub">Where each layer earns its keep</p>
+        <div class="legend">
+          <span><span class="swatch" style="background:var(--accent)"></span>Rules</span>
+          <span><span class="swatch" style="background:var(--ml)"></span>Machine learning</span>
+        </div>
+        <svg viewBox="0 0 480 250" width="100%" role="img" aria-label="Recall by anomaly type">
+          <style>.gl{stroke:var(--border)}.lbl{fill:var(--muted);font:11px sans-serif}
+            .val{fill:var(--text);font:600 10px sans-serif}</style>
+          <!-- gridlines at 0/50/100 -->
+          <line class="gl" x1="120" y1="20" x2="120" y2="220"/>
+          <line class="gl" x1="290" y1="20" x2="290" y2="220"/>
+          <line class="gl" x1="460" y1="20" x2="460" y2="220"/>
+          <text class="lbl" x="120" y="235" text-anchor="middle">0%</text>
+          <text class="lbl" x="290" y="235" text-anchor="middle">50%</text>
+          <text class="lbl" x="455" y="235" text-anchor="middle">100%</text>
+          <!-- rows: [label, rules%, ml%] scaled: x=120 + pct*3.4 -->
+          <!-- Fuel surcharge (the story) -->
+          <g>
+            <text class="lbl" x="0" y="34">Fuel surcharge</text>
+            <rect x="120" y="26" width="0.5" height="12" fill="var(--accent)"/>
+            <rect x="120" y="40" width="213.5" height="12" fill="var(--ml)"/>
+            <text class="val" x="338" y="50">62.8%</text>
+            <text class="val" x="126" y="36" fill="var(--alert)">rules 0%</text>
+          </g>
+          <g>
+            <text class="lbl" x="0" y="76">Rate discrepancy</text>
+            <rect x="120" y="68" width="340" height="12" fill="var(--accent)"/>
+            <rect x="120" y="82" width="66" height="12" fill="var(--ml)"/>
+          </g>
+          <g>
+            <text class="lbl" x="0" y="118">Duplicate invoice</text>
+            <rect x="120" y="110" width="340" height="12" fill="var(--accent)"/>
+            <rect x="120" y="124" width="7" height="12" fill="var(--ml)"/>
+          </g>
+          <g>
+            <text class="lbl" x="0" y="160">Short / over pay</text>
+            <rect x="120" y="152" width="340" height="12" fill="var(--accent)"/>
+            <rect x="120" y="166" width="28" height="12" fill="var(--ml)"/>
+          </g>
+          <g>
+            <text class="lbl" x="0" y="202">Unapplied cash</text>
+            <rect x="120" y="194" width="340" height="12" fill="var(--accent)"/>
+            <rect x="120" y="208" width="1" height="12" fill="var(--ml)"/>
+          </g>
+        </svg>
+      </div>
+    </div>
+
+    <div class="callout">
+      <b>The insight.</b> The rule engine hits 99% precision but is structurally blind to one
+      whole error class — subtle <b>fuel-surcharge mistakes</b> sit under its fixed 2% threshold,
+      giving <b>0% recall</b>. The Isolation Forest, learning the normal shape of an invoice,
+      recovers <b>63%</b> of them. Machine learning here <b>complements</b> business rules — it
+      doesn't replace them: rules give explainability and precision on known patterns, ML
+      extends coverage to the unknown ones.
+    </div>
+  </div>
+</section>
+
+<!-- DASHBOARD -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Delivery</div>
+    <h2 class="title">Reconciliation Control Tower</h2>
+    <p class="lead">The pipeline feeds a two-page Power BI report. Executives see exposure and
+      trend; operations drill into a ranked, filterable exception queue with a model-performance
+      panel — the numbers below are the live pipeline output.</p>
+
+    <div class="kpis" style="margin-top:24px">
+      <div class="kpi"><div class="v">99.7%</div><div class="l">Match rate</div></div>
+      <div class="kpi"><div class="v alert">€214k</div><div class="l">€ at risk</div></div>
+      <div class="kpi"><div class="v">2,767</div><div class="l">Open exceptions</div></div>
+      <div class="kpi"><div class="v">~3%</div><div class="l">Anomaly rate</div></div>
+    </div>
+
+    <div class="grid2" style="margin-top:22px">
+      <div class="card">
+        <h3>€ at risk by anomaly type</h3>
+        <p class="sub">Unapplied cash dominates exposure — whole payments, not just deltas</p>
+        <svg viewBox="0 0 480 210" width="100%" role="img" aria-label="Euro at risk by type">
+          <style>.bl{fill:var(--muted);font:11px sans-serif}.bv{fill:var(--text);font:600 11px sans-serif}</style>
+          <!-- max 198500 -> width scale to 300px -->
+          <g><text class="bl" x="0" y="28">Unapplied cash</text>
+            <rect x="130" y="18" width="300" height="16" rx="3" fill="var(--alert)"/>
+            <text class="bv" x="436" y="31">€198.5k</text></g>
+          <g><text class="bl" x="0" y="66">Duplicate invoice</text>
+            <rect x="130" y="56" width="13.2" height="16" rx="3" fill="var(--accent)"/>
+            <text class="bv" x="150" y="69">€8.8k</text></g>
+          <g><text class="bl" x="0" y="104">Rate discrepancy</text>
+            <rect x="130" y="94" width="6.4" height="16" rx="3" fill="var(--accent)"/>
+            <text class="bv" x="143" y="107">€4.3k</text></g>
+          <g><text class="bl" x="0" y="142">ML anomaly</text>
+            <rect x="130" y="132" width="2.5" height="16" rx="3" fill="var(--ml)"/>
+            <text class="bv" x="139" y="145">€1.6k</text></g>
+          <g><text class="bl" x="0" y="180">Short / over pay</text>
+            <rect x="130" y="170" width="1.4" height="16" rx="3" fill="var(--accent)"/>
+            <text class="bv" x="138" y="183">€0.9k</text></g>
+        </svg>
+      </div>
+
+      <div class="card">
+        <h3>Monthly match-rate trend</h3>
+        <p class="sub">Stable at 99.5–100% across the 12-month billing window</p>
+        <svg viewBox="0 0 480 210" width="100%" role="img" aria-label="Match rate trend">
+          <style>.ax{stroke:var(--border)}.axl{fill:var(--muted);font:10px sans-serif}</style>
+          <line class="ax" x1="40" y1="20" x2="40" y2="170"/>
+          <line class="ax" x1="40" y1="170" x2="470" y2="170"/>
+          <text class="axl" x="34" y="30" text-anchor="end">100%</text>
+          <text class="axl" x="34" y="100" text-anchor="end">99.7%</text>
+          <text class="axl" x="34" y="170" text-anchor="end">99.4%</text>
+          <!-- y maps 99.4..100.05 -> 170..20 ; points every ~28.6px from x=55 -->
+          <polyline fill="none" stroke="var(--accent)" stroke-width="2.5"
+            points="55,20 84,98 113,105 142,93 171,138 200,68 229,77 258,120 287,85 316,39 345,68 374,108 403,85 432,29 461,74"/>
+          <g fill="var(--accent)">
+            <circle cx="55" cy="20" r="3"/><circle cx="200" cy="68" r="3"/>
+            <circle cx="316" cy="39" r="3"/><circle cx="432" cy="29" r="3"/><circle cx="461" cy="74" r="3"/>
+          </g>
+          <text class="axl" x="55" y="188">Jan</text>
+          <text class="axl" x="245" y="188">Jul</text>
+          <text class="axl" x="440" y="188">Mar</text>
+        </svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STACK + CTA -->
+<section>
+  <div class="wrap">
+    <div class="eyebrow">Under the hood</div>
+    <h2 class="title">Tooling &amp; reproducibility</h2>
+    <div class="stack">
+      <div class="card"><div class="t">SQL</div><small>Cleaning, exact + fuzzy matching, window-function duplicate detection, rate-card revalidation, exceptions register.</small></div>
+      <div class="card"><div class="t">Python</div><small>pandas + Faker generator with a fixed seed; date parsing; orchestration in <code>run_pipeline.py</code>.</small></div>
+      <div class="card"><div class="t">scikit-learn</div><small>Isolation Forest on per-invoice features: rate deviation, surcharge ratio, payment behaviour, peer-group z-scores.</small></div>
+      <div class="card"><div class="t">Power BI</div><small>Two-page Control Tower over the exported exceptions, trend and KPI feeds.</small></div>
+    </div>
+    <div class="callout" style="border-left-color:var(--ml);background:linear-gradient(180deg,var(--ml-soft),transparent)">
+      <b>One command, fully reproducible.</b> <code>python run_pipeline.py</code> regenerates the
+      data, runs the SQL layer, scores the model, evaluates against ground truth, and exports the
+      dashboard feeds — deterministically, in ~16 seconds.
+    </div>
+    <p style="margin-top:24px"><a class="btn" href="#">View the code on GitHub →</a></p>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    Synthetic data — no proprietary information used. Scenario modelled on generic
+    billing/logistics operations. Metrics shown are the live output of the reproducible
+    pipeline (seed 42).
+  </div>
+</footer>
+
+</body>
+</html>

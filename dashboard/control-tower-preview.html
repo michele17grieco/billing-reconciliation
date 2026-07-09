@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Reconciliation Control Tower — Power BI preview</title>
+<style>
+  /* Power BI-style report canvas (light, like a real .pbix export) */
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#dfe2e7;font-family:"Segoe UI",-apple-system,BlinkMacSystemFont,Roboto,Arial,sans-serif;color:#252423;padding:24px;display:flex;flex-direction:column;gap:28px;align-items:center}
+  .page{width:1280px;height:910px;background:#f4f5f7;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.18);overflow:hidden;display:flex;flex-direction:column}
+  /* report header */
+  .rhead{background:#2f2f39;color:#fff;padding:14px 22px;display:flex;align-items:center;justify-content:space-between}
+  .rhead .t{font-size:17px;font-weight:600;letter-spacing:.01em}
+  .rhead .t small{font-weight:400;color:#c7c9d1;font-size:12.5px;margin-left:10px}
+  .tabs{display:flex;gap:4px}
+  .tabs span{font-size:12px;padding:6px 14px;border-radius:5px;color:#c7c9d1}
+  .tabs span.on{background:#2f6fed;color:#fff;font-weight:600}
+  .filters{background:#e9ebef;border-bottom:1px solid #d5d8dd;padding:7px 22px;display:flex;gap:8px;align-items:center;font-size:11.5px;color:#605e5c}
+  .chip{background:#fff;border:1px solid #d0d3d8;border-radius:4px;padding:3px 10px;color:#323130}
+  .canvas{flex:1;padding:16px;display:flex;flex-direction:column;gap:14px}
+  .row{display:flex;gap:14px}
+  .vis{background:#fff;border:1px solid #e3e6ea;border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.05);padding:14px 16px;display:flex;flex-direction:column}
+  .vis h4{font-size:13px;font-weight:600;color:#323130;margin-bottom:2px}
+  .vis .cap{font-size:11px;color:#8a8886;margin-bottom:10px}
+  /* KPI cards */
+  .kpi{flex:1;align-items:flex-start;justify-content:center;gap:2px}
+  .kpi .v{font-size:32px;font-weight:700;letter-spacing:-.01em;color:#2f6fed}
+  .kpi .v.red{color:#d1435b}.kpi .v.dark{color:#323130}.kpi .v.teal{color:#0f9d8b}
+  .kpi .l{font-size:12px;color:#605e5c;font-weight:600}
+  .kpi .s{font-size:10.5px;color:#a19f9d}
+  text{font-family:"Segoe UI",sans-serif}
+  .barlbl{font-size:11px;fill:#605e5c}.barval{font-size:11px;fill:#323130;font-weight:600}
+  .grid{stroke:#eceef1}
+  /* table */
+  table{width:100%;border-collapse:collapse;font-size:11.5px}
+  th,td{padding:6px 9px;text-align:right;border-bottom:1px solid #eceef1;white-space:nowrap}
+  th:first-child,td:first-child,th.l,td.l{text-align:left}
+  thead th{background:#f7f8fa;color:#605e5c;font-size:10px;text-transform:uppercase;letter-spacing:.03em;font-weight:600;border-bottom:1px solid #d5d8dd}
+  .pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:10px;font-weight:600}
+  .p-high{background:#fce8ec;color:#c0304a}.p-med{background:#fdf3e2;color:#b7791f}.p-low{background:#eef0f3;color:#605e5c}
+  .m-rule{background:#e9f0fe;color:#1e4fbd}.m-ml{background:#e2f5f1;color:#0b7a6c}
+  .slicer{width:200px;gap:12px}
+  .slicer .grp{font-size:11px;font-weight:600;color:#323130;margin-bottom:6px}
+  .slicer label{display:flex;align-items:center;gap:7px;font-size:11.5px;color:#605e5c;padding:3px 0}
+  .box{width:12px;height:12px;border:1.5px solid #b0b3b8;border-radius:3px;display:inline-block}
+  .box.ck{background:#2f6fed;border-color:#2f6fed;position:relative}
+  .box.ck:after{content:"";position:absolute;left:3px;top:0px;width:4px;height:8px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  /* matrix */
+  .mx{width:100%;border-collapse:collapse;font-size:11.5px}
+  .mx td,.mx th{border:1px solid #eceef1;padding:7px 10px;text-align:center}
+  .mx th{background:#f7f8fa;color:#605e5c;font-size:10.5px}
+  .mx td.l{text-align:left;color:#323130}
+  .heat{font-weight:600;border-radius:3px}
+</style>
+</head>
+<body>
+
+<!-- ============================ PAGE 1 — EXECUTIVE ============================ -->
+<div class="page" id="p1">
+  <div class="rhead">
+    <div class="t">Reconciliation Control Tower <small>Billing anomaly detection · synthetic data</small></div>
+    <div class="tabs"><span class="on">Executive</span><span>Operational</span></div>
+  </div>
+  <div class="filters">
+    <span>Filters:</span><span class="chip">Period: FY 2024 ▾</span><span class="chip">Segment: All ▾</span>
+    <span class="chip">Service: All ▾</span><span style="margin-left:auto;color:#8a8886">Last refresh: today · 99,029 transactions</span>
+  </div>
+  <div class="canvas">
+    <!-- KPI row -->
+    <div class="row">
+      <div class="vis kpi"><div class="v dark">99.7%</div><div class="l">Payment match rate</div><div class="s">48,629 of 48,779 payments</div></div>
+      <div class="vis kpi"><div class="v red">€214k</div><div class="l">Revenue at risk</div><div class="s">across 2,767 exceptions</div></div>
+      <div class="vis kpi"><div class="v dark">2,767</div><div class="l">Open exceptions</div><div class="s">127 high severity</div></div>
+      <div class="vis kpi"><div class="v teal">93.8%</div><div class="l">Detection recall (rules + ML)</div><div class="s">99.4% precision on rules</div></div>
+    </div>
+    <!-- middle row: € at risk by type + trend -->
+    <div class="row" style="flex:1">
+      <div class="vis" style="width:46%">
+        <h4>€ at risk by anomaly type</h4><div class="cap">Unapplied cash = whole payment; pricing errors = the delta</div>
+        <svg viewBox="0 0 560 250" width="100%" height="100%" preserveAspectRatio="xMinYMin meet">
+          <!-- scale: max 198500 -> 360px from x=150 -->
+          <g><text class="barlbl" x="0" y="34">Unapplied cash</text><rect x="150" y="22" width="360" height="20" rx="2" fill="#d1435b"/><text class="barval" x="516" y="37">€198.5k</text></g>
+          <g><text class="barlbl" x="0" y="80">Duplicate invoice</text><rect x="150" y="68" width="16" height="20" rx="2" fill="#2f6fed"/><text class="barval" x="172" y="83">€8.8k</text></g>
+          <g><text class="barlbl" x="0" y="126">Rate discrepancy</text><rect x="150" y="114" width="8" height="20" rx="2" fill="#2f6fed"/><text class="barval" x="164" y="129">€4.3k</text></g>
+          <g><text class="barlbl" x="0" y="172">ML anomaly</text><rect x="150" y="160" width="4" height="20" rx="2" fill="#0f9d8b"/><text class="barval" x="160" y="175">€1.6k</text></g>
+          <g><text class="barlbl" x="0" y="218">Short / over pay</text><rect x="150" y="206" width="3" height="20" rx="2" fill="#2f6fed"/><text class="barval" x="159" y="221">€0.9k</text></g>
+        </svg>
+      </div>
+      <div class="vis" style="width:54%">
+        <h4>Monthly payment match-rate</h4><div class="cap">Stable at 99.5–100% across the billing window</div>
+        <svg viewBox="0 0 640 250" width="100%" height="100%" preserveAspectRatio="xMinYMin meet">
+          <g class="grid"><line x1="55" y1="30" x2="620" y2="30"/><line x1="55" y1="110" x2="620" y2="110"/><line x1="55" y1="190" x2="620" y2="190"/></g>
+          <g style="font-size:10px;fill:#a19f9d"><text x="48" y="34" text-anchor="end">100%</text><text x="48" y="114" text-anchor="end">99.7%</text><text x="48" y="194" text-anchor="end">99.4%</text></g>
+          <!-- 15 pts, y maps 99.4..100.05 -> 190..30 ; x 70..610 -->
+          <polyline fill="none" stroke="#2f6fed" stroke-width="2.5"
+            points="70,30 108,120 147,128 185,113 224,166 262,79 300,91 339,145 377,101 416,42 454,79 492,133 531,101 569,35 608,88"/>
+          <g fill="#2f6fed"><circle cx="70" cy="30" r="3.2"/><circle cx="262" cy="79" r="3.2"/><circle cx="416" cy="42" r="3.2"/><circle cx="569" cy="35" r="3.2"/><circle cx="608" cy="88" r="3.2"/></g>
+          <g style="font-size:10px;fill:#a19f9d"><text x="70" y="212">Jan 24</text><text x="290" y="212">Jul 24</text><text x="560" y="212">Mar 25</text></g>
+        </svg>
+      </div>
+    </div>
+    <!-- top customers -->
+    <div class="vis" style="height:190px">
+      <h4>Top 10 customers by € at risk</h4><div class="cap">Concentration of exposure — priority accounts for review</div>
+      <svg viewBox="0 0 1200 120" width="100%" height="100%" preserveAspectRatio="none">
+        <!-- 10 bars, max 4868 -> height 90 ; baseline y=110 -->
+        <g fill="#2f6fed">
+          <rect x="30"  y="20"  width="90" height="90" rx="2"/>
+          <rect x="147" y="21"  width="90" height="89" rx="2"/>
+          <rect x="264" y="24"  width="90" height="86" rx="2"/>
+          <rect x="381" y="28"  width="90" height="82" rx="2"/>
+          <rect x="498" y="33"  width="90" height="77" rx="2"/>
+          <rect x="615" y="33"  width="90" height="77" rx="2"/>
+          <rect x="732" y="36"  width="90" height="74" rx="2"/>
+          <rect x="849" y="41"  width="90" height="69" rx="2"/>
+          <rect x="966" y="45"  width="90" height="65" rx="2"/>
+          <rect x="1083" y="50" width="90" height="60" rx="2"/>
+        </g>
+        <g style="font-size:12px;fill:#323130;font-weight:600" text-anchor="middle">
+          <text x="75" y="14">€4.9k</text><text x="192" y="15">€4.8k</text><text x="309" y="18">€4.7k</text><text x="426" y="22">€4.5k</text><text x="543" y="27">€4.2k</text><text x="660" y="27">€4.2k</text><text x="777" y="30">€4.0k</text><text x="894" y="35">€3.7k</text><text x="1011" y="39">€3.5k</text><text x="1128" y="44">€3.2k</text>
+        </g>
+        <g style="font-size:10.5px;fill:#8a8886" text-anchor="middle">
+          <text x="75" y="118">C491</text><text x="192" y="118">C335</text><text x="309" y="118">C456</text><text x="426" y="118">C212</text><text x="543" y="118">C017</text><text x="660" y="118">C158</text><text x="777" y="118">C283</text><text x="894" y="118">C326</text><text x="1011" y="118">C131</text><text x="1128" y="118">C068</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- ============================ PAGE 2 — OPERATIONAL ============================ -->
+<div class="page" id="p2">
+  <div class="rhead">
+    <div class="t">Reconciliation Control Tower <small>Exception queue &amp; model performance</small></div>
+    <div class="tabs"><span>Executive</span><span class="on">Operational</span></div>
+  </div>
+  <div class="filters">
+    <span>Filters:</span><span class="chip">Type: All ▾</span><span class="chip">Aging: All ▾</span>
+    <span class="chip">Severity: All ▾</span><span style="margin-left:auto;color:#8a8886">2,767 exceptions · sorted by € at risk</span>
+  </div>
+  <div class="canvas">
+    <div class="row" style="flex:1">
+      <!-- slicers -->
+      <div class="vis slicer">
+        <div>
+          <div class="grp">Anomaly type</div>
+          <label><span class="box ck"></span> Unapplied cash <span style="margin-left:auto;color:#a19f9d">150</span></label>
+          <label><span class="box ck"></span> Rate discrepancy <span style="margin-left:auto;color:#a19f9d">500</span></label>
+          <label><span class="box ck"></span> Duplicate invoice <span style="margin-left:auto;color:#a19f9d">258</span></label>
+          <label><span class="box ck"></span> Short / over pay <span style="margin-left:auto;color:#a19f9d">351</span></label>
+          <label><span class="box ck"></span> ML anomaly <span style="margin-left:auto;color:#a19f9d">1,508</span></label>
+        </div>
+        <div>
+          <div class="grp">Severity</div>
+          <label><span class="box ck"></span> High <span style="margin-left:auto;color:#a19f9d">127</span></label>
+          <label><span class="box ck"></span> Medium <span style="margin-left:auto;color:#a19f9d">33</span></label>
+          <label><span class="box ck"></span> Low <span style="margin-left:auto;color:#a19f9d">2,607</span></label>
+        </div>
+        <div>
+          <div class="grp">Aging bucket</div>
+          <label><span class="box ck"></span> 0–90 days</label>
+          <label><span class="box ck"></span> 90+ days</label>
+        </div>
+      </div>
+      <!-- exceptions table -->
+      <div class="vis" style="flex:1">
+        <h4>Exceptions register — ranked by € at risk</h4><div class="cap">Drill-down queue; note INV0016743 flagged by both a rule and the model</div>
+        <table>
+          <thead><tr><th class="l">Entity</th><th class="l">Type</th><th class="l">Customer</th><th>€ at risk</th><th>Aging</th><th>Severity</th><th>Method</th></tr></thead>
+          <tbody>
+            <tr><td class="l">PAY0000562</td><td class="l">Unapplied cash</td><td class="l">CUST00158</td><td>€2,500</td><td>84</td><td><span class="pill p-high">High</span></td><td><span class="pill m-rule">Rule</span></td></tr>
+            <tr><td class="l">PAY0037152</td><td class="l">Unapplied cash</td><td class="l">CUST00017</td><td>€2,500</td><td>341</td><td><span class="pill p-high">High</span></td><td><span class="pill m-rule">Rule</span></td></tr>
+            <tr><td class="l">PAY0001320</td><td class="l">Unapplied cash</td><td class="l">CUST00108</td><td>€2,500</td><td>260</td><td><span class="pill p-high">High</span></td><td><span class="pill m-rule">Rule</span></td></tr>
+            <tr><td class="l">INV0050040</td><td class="l">Duplicate invoice</td><td class="l">CUST00481</td><td>€323</td><td>397</td><td><span class="pill p-med">Medium</span></td><td><span class="pill m-rule">Rule</span></td></tr>
+            <tr><td class="l">INV0050182</td><td class="l">Duplicate invoice</td><td class="l">CUST00068</td><td>€177</td><td>137</td><td><span class="pill p-med">Medium</span></td><td><span class="pill m-rule">Rule</span></td></tr>
+            <tr><td class="l">INV0016743</td><td class="l">Rate discrepancy</td><td class="l">CUST00342</td><td>€69</td><td>346</td><td><span class="pill p-low">Low</span></td><td><span class="pill m-rule">Rule</span> <span class="pill m-ml">ML</span></td></tr>
+            <tr><td class="l">INV0032394</td><td class="l">Rate discrepancy</td><td class="l">CUST00408</td><td>€59</td><td>382</td><td><span class="pill p-low">Low</span></td><td><span class="pill m-rule">Rule</span></td></tr>
+            <tr><td class="l">INV0037694</td><td class="l">ML anomaly (fuel)</td><td class="l">CUST00261</td><td>€47</td><td>185</td><td><span class="pill p-low">Low</span></td><td><span class="pill m-ml">ML</span></td></tr>
+            <tr><td class="l">INV0031058</td><td class="l">ML anomaly (fuel)</td><td class="l">CUST00139</td><td>€47</td><td>435</td><td><span class="pill p-low">Low</span></td><td><span class="pill m-ml">ML</span></td></tr>
+            <tr><td class="l">PAY0024601</td><td class="l">Short / over pay</td><td class="l">CUST00268</td><td>€25</td><td>281</td><td><span class="pill p-low">Low</span></td><td><span class="pill m-rule">Rule</span></td></tr>
+            <tr><td class="l">PAY0037567</td><td class="l">Short / over pay</td><td class="l">CUST00239</td><td>€18</td><td>250</td><td><span class="pill p-low">Low</span></td><td><span class="pill m-rule">Rule</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <!-- bottom row: matrix + model performance -->
+    <div class="row" style="height:300px">
+      <div class="vis" style="width:44%">
+        <h4>Anomaly type × detection method</h4><div class="cap">Where each exception originates (row counts)</div>
+        <table class="mx">
+          <thead><tr><th class="l">Anomaly type</th><th>Rule</th><th>ML</th></tr></thead>
+          <tbody>
+            <tr><td class="l">Duplicate invoice</td><td class="heat" style="background:#cfe0fc">258</td><td>—</td></tr>
+            <tr><td class="l">Rate discrepancy</td><td class="heat" style="background:#9dc0f9">500</td><td>—</td></tr>
+            <tr><td class="l">Short / over pay</td><td class="heat" style="background:#c1d7fb">351</td><td>—</td></tr>
+            <tr><td class="l">Unapplied cash</td><td class="heat" style="background:#dbe8fd">150</td><td>—</td></tr>
+            <tr><td class="l">ML anomaly (fuel etc.)</td><td>—</td><td class="heat" style="background:#8fd8cc">1,508</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="vis" style="width:56%">
+        <h4>Model performance — rules vs ML vs combined</h4><div class="cap">Precision &amp; recall against seeded ground truth</div>
+        <svg viewBox="0 0 660 200" width="100%" height="100%" preserveAspectRatio="xMinYMin meet">
+          <g class="grid"><line x1="150" y1="10" x2="150" y2="175"/><line x1="340" y1="10" x2="340" y2="175"/><line x1="530" y1="10" x2="530" y2="175"/><line x1="625" y1="10" x2="625" y2="175"/></g>
+          <g style="font-size:10px;fill:#a19f9d"><text x="150" y="192" text-anchor="middle">0%</text><text x="340" y="192" text-anchor="middle">50%</text><text x="625" y="192" text-anchor="middle">100%</text></g>
+          <!-- x = 150 + pct*4.75 -->
+          <!-- Rules -->
+          <text class="barlbl" x="0" y="34">Rules only</text>
+          <rect x="150" y="22" width="472" height="12" rx="2" fill="#2f6fed"/><text class="barval" x="626" y="32">P 99.4%</text>
+          <rect x="150" y="36" width="396" height="12" rx="2" fill="#9dc0f9"/><text class="barval" x="550" y="46">R 83.3%</text>
+          <!-- ML -->
+          <text class="barlbl" x="0" y="86">ML only</text>
+          <rect x="150" y="74" width="89" height="12" rx="2" fill="#0f9d8b"/><text class="barval" x="243" y="84">P 18.8%</text>
+          <rect x="150" y="88" width="90" height="12" rx="2" fill="#7fd0c2"/><text class="barval" x="244" y="98">R 19.0%</text>
+          <!-- Combined -->
+          <text class="barlbl" x="0" y="138">Rules + ML</text>
+          <rect x="150" y="126" width="253" height="12" rx="2" fill="#2f6fed"/><text class="barval" x="407" y="136">P 53.2%</text>
+          <rect x="150" y="140" width="446" height="12" rx="2" fill="#5aa0f0"/><text class="barval" x="600" y="150">R 93.8%</text>
+          <g style="font-size:10px;fill:#605e5c"><rect x="0" y="168" width="10" height="10" fill="#2f6fed"/><text x="15" y="177">Precision</text><rect x="90" y="168" width="10" height="10" fill="#9dc0f9"/><text x="105" y="177">Recall</text></g>
+        </svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // ?only=p1 / ?only=p2 -> isolate a single page for clean 1280x760 screenshots
+  (function(){
+    var only=new URLSearchParams(location.search).get('only');
+    if(!only)return;
+    document.body.style.padding='0';
+    document.body.style.gap='0';
+    document.body.style.background='#f4f5f7';
+    ['p1','p2'].forEach(function(id){
+      var el=document.getElementById(id);
+      if(id!==only){el.style.display='none';}
+      else{el.style.boxShadow='none';el.style.borderRadius='0';}
+    });
+  })();
+</script>
+</body>
+</html>

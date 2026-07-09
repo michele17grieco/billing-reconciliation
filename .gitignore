@@ -1,0 +1,10 @@
+# generated artefacts — reproducible from run_pipeline.py
+output/
+data/*.csv
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+
+# local editor / assistant config — not part of the public project
+.claude/
